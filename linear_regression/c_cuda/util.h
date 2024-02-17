@@ -1,0 +1,1 @@
+double rand_normal();

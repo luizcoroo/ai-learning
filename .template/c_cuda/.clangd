@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [-std, c2x, -Wno-c2x-extensions, -isystem, /opt/cuda/include/]
