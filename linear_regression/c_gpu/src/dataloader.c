@@ -6,7 +6,6 @@
 #include "util.h"
 
 DataLoader dataloader_init(DataLoaderDesc desc) {
-
   DataLoader dl = {
       .permutation = malloc(sizeof(int) * desc.dataset->size),
       .batch_size = desc.batch_size,
@@ -15,6 +14,7 @@ DataLoader dataloader_init(DataLoaderDesc desc) {
   };
 
   int bytes = sizeof(float) * desc.batch_size * (desc.dataset->width + 2);
+
   cudaMallocHost((void **)&dl.cpu_data, bytes);
   cudaMalloc((void **)&dl.gpu_data, bytes);
 

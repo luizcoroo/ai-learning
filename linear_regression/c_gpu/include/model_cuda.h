@@ -1,4 +1,4 @@
-void model_cuda_forward(const float *x, const float *w, float b, float *y_hat,
+void model_cuda_forward(const float *x, const float *w, const float *b, float *y_hat,
                         int n_rows, int n_columns);
 
 float model_cuda_evaluate(const float *y_hat, const float *y, int n_rows);

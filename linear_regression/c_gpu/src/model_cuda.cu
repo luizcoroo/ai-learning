@@ -1,11 +1,11 @@
 #include <cuda_runtime_api.h>
 #include <string.h>
 
-__global__ void kernel_forward(const float *x, const float *w, float b,
+__global__ void kernel_forward(const float *x, const float *w, const float *b,
                                float *y, int n_rows, int n_columns) {
   int i = threadIdx.x;
   if (i < n_rows) {
-    float sum = b;
+    float sum = *b;
     for (int j = 0; j < n_columns; j++)
       sum += x[i * n_columns + j] * w[j];
 
@@ -13,10 +13,10 @@ __global__ void kernel_forward(const float *x, const float *w, float b,
   }
 }
 
-extern "C" void model_cuda_forward(const float *d_x, const float *d_w, float b,
-                                   float *d_y, int n_rows, int n_columns) {
+extern "C" void model_cuda_forward(const float *x, const float *w, const float *b,
+                                   float *y, int n_rows, int n_columns) {
 
-  kernel_forward<<<1, n_rows>>>(d_x, d_w, b, d_y, n_rows, n_columns);
+  kernel_forward<<<1, n_rows>>>(x, w, b, y, n_rows, n_columns);
 }
 
 __global__ void kernel_evaluate(const float *y_hat, const float *y, int n_rows,
