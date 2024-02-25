@@ -24,11 +24,13 @@ class LinearRegressionModel(torch.nn.Module):
         return self.linear(x)
 
 
-torch.manual_seed(2024)
+torch.manual_seed(1)
 
-weight_len = 4098
+weight_len = 4096
 batch_size = 64
 train_size = batch_size * 100
+learning_rate = 0.001
+weight_decay = 0.1
 max_epochs = 100
 
 dataset = LinearRegressionDataset(
@@ -39,7 +41,11 @@ dataset = LinearRegressionDataset(
 )
 model = LinearRegressionModel(in_features=weight_len)
 criterion = torch.nn.MSELoss()
-optimizer = torch.optim.SGD(params=model.parameters(), lr=0.001, weight_decay=0.1)
+optimizer = torch.optim.SGD(
+    params=model.parameters(),
+    lr=learning_rate,
+    weight_decay=weight_decay,
+)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
 
 t0 = time.time()
