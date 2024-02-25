@@ -6,7 +6,9 @@ typedef struct {
 } ModelDesc;
 
 typedef struct Model {
-  float *w, b;
+  float *cpu_data;
+  float *gpu_data;
+  float *w, *b;
   float *grads;
   int width;
   float learning_rate;

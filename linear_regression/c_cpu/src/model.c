@@ -44,7 +44,7 @@ float model_evaluate(const Model *, const float *y_hat, const float *y, int n) {
 }
 
 void model_backward(Model *m, const float *x, const float *y_hat,
-                        const float *y, int n) {
+                    const float *y, int n) {
   memset(m->grads, 0, sizeof(float) * (m->width + 1));
   for (int i = 0; i < n; i++) {
     float diff = y_hat[i] - y[i];

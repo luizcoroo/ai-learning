@@ -1,3 +1,4 @@
+#include <cuda_runtime_api.h>
 #include <stdlib.h>
 
 #include "dataloader.h"
@@ -5,16 +6,17 @@
 #include "util.h"
 
 DataLoader dataloader_init(DataLoaderDesc desc) {
-  int number_of_floats =
-      desc.batch_size * desc.dataset->width + 2 * desc.batch_size;
 
   DataLoader dl = {
-      .data = malloc(sizeof(float) * number_of_floats),
       .permutation = malloc(sizeof(int) * desc.dataset->size),
       .batch_size = desc.batch_size,
       .n_batches = desc.dataset->size / desc.batch_size,
       .dataset = desc.dataset,
   };
+
+  int bytes = sizeof(float) * desc.batch_size * (desc.dataset->width + 2);
+  cudaMallocHost((void **)&dl.cpu_data, bytes);
+  cudaMalloc((void **)&dl.gpu_data, bytes);
 
   for (int i = 0; i < desc.dataset->size; i++)
     dl.permutation[i] = i;
@@ -23,35 +25,39 @@ DataLoader dataloader_init(DataLoaderDesc desc) {
 }
 
 void dataloader_deinit(const DataLoader *dl) {
-  free(dl->data);
   free(dl->permutation);
+  cudaFreeHost(dl->cpu_data);
+  cudaFree(dl->gpu_data);
 }
 
 DataLoaderIterator dataloader_iterator(DataLoader *dl) {
-  int x_end = dl->batch_size * dl->dataset->width;
-  int y_end = x_end + dl->batch_size;
   shuffleiarr(dl->permutation, dl->dataset->size);
 
-  return (DataLoaderIterator){
-      .x = dl->data + 0,
-      .y = dl->data + x_end,
-      .y_hat = dl->data + y_end,
-      .size = dl->batch_size,
-      .i = 0,
-      .ref = dl,
-  };
+  DataLoaderIterator it = {.size = dl->batch_size, .i = 0, .ref = dl};
+  it.x = dl->gpu_data;
+  it.y = it.x + dl->batch_size * dl->dataset->width;
+  it.y_hat = it.y + dl->batch_size;
+
+  return it;
 }
 
 int dataloader_iterator_next(DataLoaderIterator *it) {
   if (it->i >= it->ref->n_batches)
     return 0;
 
-  int batch_start = it->i * it->size;
-  int width = it->ref->dataset->width;
-  for (int i = 0; i < it->size; i++) {
-    int idx = it->ref->permutation[batch_start + i];
-    dataset_get_item(it->ref->dataset, idx, it->x + i * width, it->y + i);
-  }
+  DataLoader *dl = it->ref;
+  const Dataset *d = dl->dataset;
+
+  float *x = dl->cpu_data;
+  float *y = x + it->size * d->width;
+  const int *perm = dl->permutation;
+
+  int start = it->i * it->size;
+  for (int i = 0; i < it->size; i++)
+    dataset_get_item(d, perm[start + i], x + i * d->width, y + i);
+
+  int bytes = sizeof(float) * it->size * (d->width + 1);
+  cudaMemcpy(dl->gpu_data, dl->cpu_data, bytes, cudaMemcpyHostToDevice);
 
   it->i += 1;
   return 1;

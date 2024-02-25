@@ -6,7 +6,8 @@ typedef struct {
 } DataLoaderDesc;
 
 typedef struct {
-  float *data;
+  float *cpu_data;
+  float *gpu_data;
   int *permutation;
   int batch_size;
   int n_batches;
@@ -19,7 +20,7 @@ typedef struct {
   float *y_hat;
   int size;
   int i;
-  const DataLoader *ref;
+  DataLoader *ref;
 } DataLoaderIterator;
 
 DataLoader dataloader_init(DataLoaderDesc desc);

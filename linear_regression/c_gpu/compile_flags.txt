@@ -1,3 +1,5 @@
 -I
 include/
+-isystem
+/opt/cuda/include
 
