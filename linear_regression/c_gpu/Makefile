@@ -1,19 +1,25 @@
-CFILES   = $(wildcard *.c)
-CUFILES	 = $(wildcard *.cu)
-OBJFILES = $(CFILES:.c=.o) $(CUFILES:.cu=.o)
-OUT      = main
+CFILES   = $(wildcard src/*.c)
+CUFILES	 = $(wildcard src/*.cu)
+OBJFILES = $(patsubst src/%,build/%,$(CFILES:.c=.o))
+OBJFILES+= $(patsubst src/%,build/%,$(CUFILES:.cu=.o))
+OUT      = build/main
 
 CC      = gcc
-CFLAGS  = -O3 -Wall -I/opt/cuda/include
-LDFLAGS  = -L/opt/cuda/lib
+CFLAGS  = -O3 -Wall -isystem/opt/cuda/include -Iinclude
+LDFLAGS = -L/opt/cuda/lib
 LDLIBS  = -lm -lcudart
 
 NVCC	= /opt/cuda/bin/nvcc -ccbin=/opt/cuda/bin
-CUFLAGS	= -O3 -I/opt/cuda/include
+CUFLAGS	= -O3 -I/opt/cuda/include -Iinclude
 
 $(OUT): $(OBJFILES)
 
-%.o: %.cu
+build/%.o: src/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c -o $@ $^
+
+build/%.o: src/%.cu
+	@mkdir -p $(@D)
 	$(NVCC) $(CUFLAGS) -c -o $@ $^
 
 run: $(OUT)

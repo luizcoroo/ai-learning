@@ -12,9 +12,6 @@ build/%.o: src/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $^ -o $@
 
-build:
-	mkdir build
-
 run: $(OUT)
 	@./$(OUT)
 

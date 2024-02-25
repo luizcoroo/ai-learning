@@ -1,19 +1,21 @@
 #include <cuda_runtime_api.h>
 #include <string.h>
 
-__global__ void kernel_forward(const float *x, const float *w, float *y,
-                               int n_rows, int n_columns) {
+__global__ void kernel_forward(const float *x, const float *w, float b,
+                               float *y, int n_rows, int n_columns) {
   int i = threadIdx.x;
   float sum = 0;
-  if (i < n_rows)
+  if (i < n_rows) {
+    sum += b;
     for (int j = 0; j < n_columns; j++)
       sum += x[i * n_columns + j] * w[j];
+  }
 
   y[i] = sum;
 }
 
-extern "C" void model_cuda_forward(const float *x, const float *w, float *y,
-                                   int n_rows, int n_columns) {
+extern "C" void model_cuda_forward(const float *x, const float *w, float b,
+                                   float *y, int n_rows, int n_columns) {
 
   unsigned long x_size = sizeof(float) * n_rows * n_columns;
   unsigned long w_size = sizeof(float) * n_columns;
@@ -28,7 +30,7 @@ extern "C" void model_cuda_forward(const float *x, const float *w, float *y,
   cudaMemcpy(d_w, w, w_size, cudaMemcpyHostToDevice);
   cudaMemcpy(d_y, y, y_size, cudaMemcpyHostToDevice);
 
-  kernel_forward<<<1, n_rows>>>(d_x, d_w, d_y, n_rows, n_columns);
+  kernel_forward<<<1, n_rows>>>(d_x, d_w, b, d_y, n_rows, n_columns);
   cudaDeviceSynchronize();
 
   cudaMemcpy(y, d_y, y_size, cudaMemcpyDeviceToHost);
