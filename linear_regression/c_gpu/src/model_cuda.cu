@@ -1,6 +1,8 @@
 #include <cuda_runtime_api.h>
 #include <string.h>
 
+#include "model_cuda.h"
+
 __global__ void kernel_forward(const float *x, const float *w, const float *b,
                                float *y, int n_rows, int n_columns) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -13,7 +15,7 @@ __global__ void kernel_forward(const float *x, const float *w, const float *b,
   }
 }
 
-extern "C" void model_cuda_forward(const float *x, const float *w,
+void model_cuda_forward(const float *x, const float *w,
                                    const float *b, float *y, int n_rows,
                                    int n_columns) {
   int block_size = 256;
@@ -30,7 +32,7 @@ __global__ void kernel_evaluate(const float *y_hat, const float *y, int n_rows,
   }
 }
 
-extern "C" float model_cuda_evaluate(const float *y_hat, const float *y,
+float model_cuda_evaluate(const float *y_hat, const float *y,
                                      int n_rows) {
 
   float loss = 0;
@@ -68,7 +70,7 @@ __global__ void kernel_backward(const float *x, const float *y_hat,
   }
 }
 
-extern "C" void model_cuda_backward(const float *x, const float *y_hat,
+void model_cuda_backward(const float *x, const float *y_hat,
                                     const float *y, float *grads, int n_rows,
                                     int n_columns) {
   int block_size = 256;
@@ -91,7 +93,7 @@ __global__ void kernel_update(const float *grads, float *w, float *b,
   }
 }
 
-extern "C" void model_cuda_update(const float *grads, float *w, float *b,
+void model_cuda_update(const float *grads, float *w, float *b,
                                   int n_columns, float learning_rate,
                                   float weight_decay) {
 
