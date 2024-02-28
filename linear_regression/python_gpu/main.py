@@ -51,16 +51,19 @@ optimizer = torch.optim.SGD(
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
 
 t0 = time.time()
-loss = None
+last_loss = None
 
 model.to(device)
 for _ in range(max_epochs):
+    last_loss = 0
     for x, y in dataloader:
         optimizer.zero_grad()
         loss = criterion(model(x.to(device)), y.to(device))
         loss.backward()
         optimizer.step()
+        last_loss += loss
+    last_loss /= len(dataloader)
 
 t1 = time.time()
 
-print(f"{t1 - t0:.6f}, {loss:.6f}")
+print(f"{t1 - t0:.6f}, {last_loss:.6f}")
