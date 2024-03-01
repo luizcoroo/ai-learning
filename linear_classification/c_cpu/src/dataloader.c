@@ -5,11 +5,12 @@
 #include "util.h"
 
 DataLoader dataloader_init(DataLoaderDesc desc) {
-  int number_of_floats =
-      desc.batch_size * desc.dataset->width + 2 * desc.batch_size;
+  int number_of_ubytes = desc.batch_size * (desc.dataset->width + 1);
+  int number_of_floats = desc.batch_size * desc.dataset->classes;
 
   DataLoader dl = {
-      .data = malloc(sizeof(float) * number_of_floats),
+      .data = malloc(sizeof(ubyte) * number_of_ubytes),
+      .y_hat = malloc(sizeof(float) * number_of_floats),
       .permutation = malloc(sizeof(int) * desc.dataset->size),
       .batch_size = desc.batch_size,
       .n_batches = desc.dataset->size / desc.batch_size,
@@ -24,18 +25,18 @@ DataLoader dataloader_init(DataLoaderDesc desc) {
 
 void dataloader_deinit(const DataLoader *dl) {
   free(dl->data);
+  free(dl->y_hat);
   free(dl->permutation);
 }
 
 DataLoaderIterator dataloader_iterator(DataLoader *dl) {
   int x_end = dl->batch_size * dl->dataset->width;
-  int y_end = x_end + dl->batch_size;
   shuffleiarr(dl->permutation, dl->dataset->size);
 
   return (DataLoaderIterator){
       .x = dl->data + 0,
       .y = dl->data + x_end,
-      .y_hat = dl->data + y_end,
+      .y_hat = dl->y_hat,
       .size = dl->batch_size,
       .i = 0,
       .ref = dl,

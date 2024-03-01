@@ -1,4 +1,5 @@
 typedef struct Dataset Dataset;
+typedef unsigned char ubyte;
 
 typedef struct {
   const Dataset *dataset;
@@ -6,7 +7,8 @@ typedef struct {
 } DataLoaderDesc;
 
 typedef struct {
-  float *data;
+  ubyte *data;
+  float *y_hat;
   int *permutation;
   int batch_size;
   int n_batches;
@@ -14,8 +16,8 @@ typedef struct {
 } DataLoader;
 
 typedef struct {
-  float *x;
-  float *y;
+  ubyte *x;
+  ubyte *y;
   float *y_hat;
   int size;
   int i;

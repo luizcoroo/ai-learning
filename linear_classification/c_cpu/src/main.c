@@ -15,9 +15,10 @@ int main() {
   float learning_rate = 0.001;
   float weight_decay = 0.1;
   float noise = 0.01;
-  int max_epochs = 100;
+  int max_epochs = 30;
 
-  Dataset dataset = dataset_init((DatasetDesc){.root_dir = "../../data/"});
+  Dataset dataset =
+      dataset_init((DatasetDesc){.root_dir = "../../data/FashionMNIST/raw/"});
 
   Model model = model_init((ModelDesc){
       .input_width = dataset.width,
@@ -46,10 +47,25 @@ int main() {
       model_update(&model);
     }
     loss /= dataloader.n_batches;
+    printf("%f\n", loss);
   }
 
   double time_taken = ((double)clock() - t0) / CLOCKS_PER_SEC;
   printf("%lf, %f\n", time_taken, loss);
+
+  {
+    DataLoaderIterator it = dataloader_iterator(&dataloader);
+    dataloader_iterator_next(&it);
+    model_forward(&model, it.x, it.y_hat, it.size);
+
+    for(int i = 0; i < it.size; ++i) {
+      for(int j = 0; j < model.output_width; ++j)
+        printf("%.2f ", expf(it.y_hat[i * model.output_width + j]));
+
+      printf(" -- %d\n", it.y[i]);
+    }
+
+  }
 
   dataset_deinit(&dataset);
   model_deinit(&model);
