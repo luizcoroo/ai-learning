@@ -43,9 +43,7 @@ void model_forward(Model *m, const ubyte *x, float *log_y_hat, int n) {
         o[i * m->output_width + j] +=
             x[i * m->input_width + k] * m->w[k * m->output_width + j] + m->b[j];
     }
-  }
 
-  for (int i = 0; i < n; i++) {
     float max = -FLT_MAX;
     for (int j = 0; j < m->output_width; j++)
       if (o[i * m->output_width + j] > max)
@@ -64,15 +62,8 @@ void model_forward(Model *m, const ubyte *x, float *log_y_hat, int n) {
 float model_evaluate(const Model *m, const float *log_y_hat, const ubyte *y,
                      int n) {
   float loss = 0;
-  for (int i = 0; i < n; i++) {
-    float tmp = 0;
-    for (int j = 0; j < m->output_width; j++) {
-      float y_prob = y[i] == j;
-      tmp += y_prob * log_y_hat[i * m->output_width + j];
-    }
-
-    loss += -tmp;
-  }
+  for (int i = 0; i < n; i++)
+    loss += -log_y_hat[i * m->output_width + y[i]];
 
   return loss / n;
 }
@@ -87,7 +78,7 @@ void model_backward(Model *m, const ubyte *x, const float *log_y_hat,
 
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < m->output_width; j++) {
-      float y_prob = y[i] == j;
+      float y_prob = j == y[i];
       float diff = expf(log_y_hat[i * m->output_width + j]) - y_prob;
       for (int k = 0; k < m->input_width; k++)
         w_grads[k * m->output_width + j] += x[i * m->input_width + k] * diff;

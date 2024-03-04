@@ -3,7 +3,7 @@ OBJFILES = $(patsubst src/%,build/%,$(CFILES:.c=.o))
 OUT      = build/main
 
 CC      = gcc
-CFLAGS  = -O3 -Wall -Iinclude
+CFLAGS  = -std=c2x -g -Wall -Iinclude
 LDLIBS  = -lm 
 
 $(OUT): $(OBJFILES)
