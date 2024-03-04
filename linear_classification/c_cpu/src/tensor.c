@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <float.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -57,7 +58,42 @@ void tensor_align_to(TensorView *a, int rank) {
   a->rank = rank;
 }
 
-void tensor_expand_to(TensorView *a, const int *sizes, int rank) {
+void tensor_unalign(TensorView *a) {
+  int rank_diff = 0;
+  while (rank_diff < a->rank && a->sizes[rank_diff] == 1)
+    rank_diff += 1;
+
+  for (int i = rank_diff; i < a->rank; ++i) {
+    a->sizes[i - rank_diff] = a->sizes[i];
+    a->strides[i - rank_diff] = a->strides[i];
+  }
+
+  a->rank -= rank_diff;
+}
+
+void tensor_squeeze_all(TensorView *a) {
+  int i = 0, j = 0;
+  for (; j < a->rank; i++, j++) {
+    if (a->sizes[j] == 1)
+      while (j < a->rank && a->sizes[j] == 1)
+        j++;
+
+    a->sizes[i] = a->sizes[j];
+    a->strides[i] = a->strides[j];
+  }
+  a->rank -= j - i;
+}
+
+void tensor_unbroadcast(TensorView *a) {
+  for (int i = 0; i < a->rank; ++i) {
+    if (a->strides[i] == 0) {
+      a->strides[i] = 1;
+      a->sizes[i] = 1;
+    }
+  }
+}
+
+void tensor_broadcast_to(TensorView *a, const int *sizes, int rank) {
   for (int i = 0; i < rank; i++) {
     if (a->sizes[i] == 1 && sizes[i] > 1) {
       a->sizes[i] = sizes[i];
@@ -78,7 +114,7 @@ void tensor_neg(TensorView a) {
 
 void tensor_add(TensorView a, TensorView b) {
   tensor_align_to(&b, a.rank);
-  tensor_expand_to(&b, a.sizes, a.rank);
+  tensor_broadcast_to(&b, a.sizes, a.rank);
 
   int pos_a = 0;
   int pos_b = 0;
@@ -93,7 +129,7 @@ void tensor_add(TensorView a, TensorView b) {
 
 void tensor_mul(TensorView a, TensorView b) {
   tensor_align_to(&b, a.rank);
-  tensor_expand_to(&b, a.sizes, a.rank);
+  tensor_broadcast_to(&b, a.sizes, a.rank);
 
   int pos_a = 0;
   int pos_b = 0;
@@ -113,31 +149,49 @@ TensorView tensor_sum(float *a_data, TensorView b, const int *dims, int n) {
     a_sizes[dims[i]] = 1;
 
   TensorView a = tensor_view(a_data, a_sizes, b.rank);
+  tensor_broadcast_to(&a, b.sizes, b.rank);
 
   int pos_a = 0;
   int pos_b = 0;
   int idxs_a[MAX_DIMS] = {0};
   int idxs_b[MAX_DIMS] = {0};
 
-  memset(a.data, 0, sizeof(float) * a.data_len);
+  for (int i = 0; i < a.data_len; i++)
+    a.data[i] = 0;
 
-  for (int i = n; i > 0; i--) {
-    for (int j = 0; j < b.sizes[dims[i - 1]]; j++) {
-      a.data[pos_a] += b.data[pos_b];
-      incr_pos_idxs_at_dim(&pos_b, idxs_b, dims[i - 1], b);
-    }
+  do {
+    a.data[pos_a] += b.data[pos_b];
+  } while (incr_pos_idxs_at_dim(&pos_a, idxs_a, a.rank, a) &&
+           incr_pos_idxs_at_dim(&pos_b, idxs_b, b.rank, b));
 
-    // incr_pos_idxs_at_dim(&pos_a, idxs_a, a.rank, a);
-  }
+  tensor_unbroadcast(&a);
 
-  // for (int i = 0; i < n; i++) {
-  //   do {
-  //     a.data[pos_a] += b.data[pos_b];
-  //   } while (incr_pos_idxs_at_dim(&pos_b, idxs_b, dims[i], b));
-  //
-  //   pos_b = 0;
-  //   // incr_pos_idxs_at_dim(&pos_a, idxs_a, dims[i - 1], a);
-  // }
+  return a;
+}
+
+TensorView tensor_max(float *a_data, TensorView b, const int *dims, int n) {
+  int a_sizes[MAX_DIMS];
+  memcpy(a_sizes, b.sizes, sizeof(int) * b.rank);
+  for (int i = 0; i < n; i++)
+    a_sizes[dims[i]] = 1;
+
+  TensorView a = tensor_view(a_data, a_sizes, b.rank);
+  tensor_broadcast_to(&a, b.sizes, b.rank);
+
+  int pos_a = 0;
+  int pos_b = 0;
+  int idxs_a[MAX_DIMS] = {0};
+  int idxs_b[MAX_DIMS] = {0};
+
+  for (int i = 0; i < a.data_len; i++)
+    a.data[i] = -FLT_MAX;
+
+  do {
+    a.data[pos_a] = fmax(a.data[pos_a], b.data[pos_b]);
+  } while (incr_pos_idxs_at_dim(&pos_a, idxs_a, a.rank, a) &&
+           incr_pos_idxs_at_dim(&pos_b, idxs_b, b.rank, b));
+
+  tensor_unbroadcast(&a);
 
   return a;
 }
@@ -145,7 +199,7 @@ TensorView tensor_sum(float *a_data, TensorView b, const int *dims, int n) {
 TensorView tensor_matmul(float *a_data, TensorView b, TensorView c) {
   int dim = b.rank - 2;
   tensor_align_to(&c, b.rank);
-  tensor_expand_to(&c, b.sizes, dim);
+  tensor_broadcast_to(&c, b.sizes, dim);
 
   int N = b.sizes[dim];
   int K = c.sizes[dim];
@@ -193,6 +247,11 @@ void tensor_describe(TensorView view) {
   printf("\ndata_len: %d", view.data_len);
 
   printf("\ndata: \n");
+  if (view.rank == 0) {
+    printf("%4.1f\n", view.data[0]);
+    return;
+  }
+
   printf("[");
   for (int i = 1; i < view.rank; i++)
     printf("[");

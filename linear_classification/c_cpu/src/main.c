@@ -14,12 +14,16 @@ int main() {
   for (int i = 0; i < 16; i++)
     data[i] = i;
 
-  TensorView view = tensor_view(data, (int[]){4, 4}, 2);
+  TensorView view = tensor_view(data, (int[]){2, 2, 4}, 3);
   tensor_describe(view);
   printf("\n");
 
-  float data2[4];
-  TensorView view2 = tensor_sum(data2, view, (int[]){0, 1}, 2);
+  float data2[100];
+  TensorView view2 = tensor_sum(data2, view, (int[]){0, 1, 2}, 3);
+  tensor_describe(view2);
+  printf("\n");
+
+  tensor_squeeze_all(&view2);
   tensor_describe(view2);
   printf("\n");
 }

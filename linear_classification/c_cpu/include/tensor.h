@@ -12,7 +12,11 @@ TensorView tensor_view(float *data, const int *sizes, int rank);
 TensorView tensor_at(TensorView view, const int *indexes, int rank);
 
 void tensor_align_to(TensorView *a, int rank);
-void tensor_expand_to(TensorView *a, const int *sizes, int rank);
+void tensor_unalign(TensorView *a);
+void tensor_broadcast_to(TensorView *a, const int *sizes, int rank);
+void tensor_unbroadcast(TensorView *a);
+void tensor_squeeze_all(TensorView *a);
+
 
 void tensor_exp(TensorView a);
 void tensor_neg(TensorView a);
