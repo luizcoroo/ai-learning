@@ -25,8 +25,8 @@ Model model_init(ModelDesc desc) {
   for (int j = 0; j < m.output_width; j++)
     m.b[j] = 0.001;
 
-  m.wv = tensor_view(m.w, (int[]){m.input_width, m.output_width}, 2);
-  m.bv = tensor_view(m.b, (int[]){m.output_width}, 1);
+  m.wv = tensor_view_f32(m.w, (int[]){m.input_width, m.output_width}, 2);
+  m.bv = tensor_view_f32(m.b, (int[]){m.output_width}, 1);
 
   return m;
 }
@@ -38,16 +38,16 @@ void model_deinit(const Model *m) {
 }
 
 void model_forward(Model *m, ubyte *x, float *y_hat, int n) {
-  TensorView ov = tensorint_matmul(
-      y_hat, tensorint_view(x, (int[]){n, m->input_width}, 2), m->wv);
-  tensor_add(ov, m->bv);
+  TensorViewF32 ov = tensor_matmul_u8xf32(
+      y_hat, tensor_view_u8(x, (int[]){n, m->input_width}, 2), m->wv);
+  tensor_add_f32(ov, m->bv);
 
   float *max_data = m->grads;
   float *sum_data = m->grads + n * m->output_width;
 
-  tensor_sub(ov, tensor_max(max_data, ov, (int[]){1}, 1));
-  tensor_exp(ov);
-  tensor_div(ov, tensor_sum(sum_data, ov, (int[]){1}, 1));
+  tensor_sub_f32(ov, tensor_max_f32(max_data, ov, (int[]){1}, 1));
+  tensor_exp_f32(ov);
+  tensor_div_f32(ov, tensor_sum_f32(sum_data, ov, (int[]){1}, 1));
 }
 
 float model_evaluate(const Model *m, const float *y_hat, const ubyte *y,

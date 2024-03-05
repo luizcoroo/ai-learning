@@ -14,7 +14,7 @@ typedef struct Model {
   float *w, *b;
   float *grads;
 
-  TensorView wv, bv, gradsv;
+  TensorViewF32 wv, bv, gradsv;
   int input_width;
   int output_width;
   float learning_rate;
