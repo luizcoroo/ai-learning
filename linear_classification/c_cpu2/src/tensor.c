@@ -357,7 +357,7 @@ void tensor_describe(TensorView view) {
   do {
     if (idxs[view.rank - 1] > 0)
       printf(" ");
-    printf("%4.1f", view.data[pos]);
+    printf("%f", view.data[pos]);
 
     dim = incr_pos_idxs_at_dim(&pos, idxs, view.rank, view);
     for (int i = dim; i < view.rank; i++)

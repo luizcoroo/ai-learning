@@ -1,5 +1,6 @@
 #include <float.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -36,18 +37,16 @@ void model_deinit(const Model *m) {
   free(m->grads);
 }
 
-float ov_data[10000];
-float max_data[10000];
-float sum_data[10000];
-
 void model_forward(Model *m, ubyte *x, float *y_hat, int n) {
   TensorView ov = tensorint_matmul(
       y_hat, tensorint_view(x, (int[]){n, m->input_width}, 2), m->wv);
   tensor_add(ov, m->bv);
 
+  float *max_data = m->grads;
+  float *sum_data = m->grads + n * m->output_width;
+
   tensor_sub(ov, tensor_max(max_data, ov, (int[]){1}, 1));
   tensor_exp(ov);
-
   tensor_div(ov, tensor_sum(sum_data, ov, (int[]){1}, 1));
 }
 
@@ -55,7 +54,7 @@ float model_evaluate(const Model *m, const float *y_hat, const ubyte *y,
                      int n) {
   float loss = 0;
   for (int i = 0; i < n; i++)
-    loss += -log1pf(y_hat[i * m->output_width + y[i]]);
+    loss += -logf(y_hat[i * m->output_width + y[i]] + 0.0001);
 
   return loss / n;
 }
