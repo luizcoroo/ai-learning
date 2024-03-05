@@ -24,6 +24,9 @@ Model model_init(ModelDesc desc) {
   for (int j = 0; j < m.output_width; j++)
     m.b[j] = 0.001;
 
+  m.wv = tensor_view(m.w, (int[]){m.input_width, m.output_width}, 2);
+  m.bv = tensor_view(m.b, (int[]){m.output_width}, 1);
+
   return m;
 }
 
@@ -33,42 +36,31 @@ void model_deinit(const Model *m) {
   free(m->grads);
 }
 
-void model_forward(Model *m, const ubyte *x, float *log_y_hat, int n) {
-  float *o = m->grads;
+float ov_data[10000];
+float max_data[10000];
+float sum_data[10000];
 
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < m->output_width; j++) {
-      o[i * m->output_width + j] = m->b[j];
-      for (int k = 0; k < m->input_width; k++)
-        o[i * m->output_width + j] +=
-            x[i * m->input_width + k] * m->w[k * m->output_width + j];
-    }
+void model_forward(Model *m, ubyte *x, float *y_hat, int n) {
+  TensorView ov = tensorint_matmul(
+      y_hat, tensorint_view(x, (int[]){n, m->input_width}, 2), m->wv);
+  tensor_add(ov, m->bv);
 
-    float max = -FLT_MAX;
-    for (int j = 0; j < m->output_width; j++)
-      if (o[i * m->output_width + j] > max)
-        max = o[i * m->output_width + j];
+  tensor_sub(ov, tensor_max(max_data, ov, (int[]){1}, 1));
+  tensor_exp(ov);
 
-    float sum = 0;
-    for (int j = 0; j < m->output_width; j++)
-      sum += expf(o[i * m->output_width + j] - max);
-
-    for (int j = 0; j < m->output_width; j++)
-      log_y_hat[i * m->output_width + j] =
-          o[i * m->output_width + j] - max - logf(sum);
-  }
+  tensor_div(ov, tensor_sum(sum_data, ov, (int[]){1}, 1));
 }
 
-float model_evaluate(const Model *m, const float *log_y_hat, const ubyte *y,
+float model_evaluate(const Model *m, const float *y_hat, const ubyte *y,
                      int n) {
   float loss = 0;
   for (int i = 0; i < n; i++)
-    loss += -log_y_hat[i * m->output_width + y[i]];
+    loss += -log1pf(y_hat[i * m->output_width + y[i]]);
 
   return loss / n;
 }
 
-void model_backward(Model *m, const ubyte *x, const float *log_y_hat,
+void model_backward(Model *m, const ubyte *x, const float *y_hat,
                     const ubyte *y, int n) {
   int parameters_len = m->output_width * (m->input_width + 1);
   memset(m->grads, 0, sizeof(float) * parameters_len);
@@ -79,7 +71,7 @@ void model_backward(Model *m, const ubyte *x, const float *log_y_hat,
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < m->output_width; j++) {
       float y_prob = j == y[i];
-      float diff = expf(log_y_hat[i * m->output_width + j]) - y_prob;
+      float diff = y_hat[i * m->output_width + j] - y_prob;
       for (int k = 0; k < m->input_width; k++)
         w_grads[k * m->output_width + j] += x[i * m->input_width + k] * diff;
 
