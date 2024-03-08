@@ -19,6 +19,7 @@ Model model_init(ModelDesc desc) {
       .weight_decay = desc.weight_decay,
   };
 
+
   for (int j = 0; j < m.input_width * m.output_width; j++)
     m.w[j] = randnf() * desc.noise;
 
