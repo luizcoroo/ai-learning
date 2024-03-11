@@ -37,7 +37,6 @@ int main() {
   int batch_size = 64;
   float learning_rate = 0.001;
   float weight_decay = 0.1;
-  float noise = 0.01;
   int max_epochs = 30;
 
   Dataset dataset =
@@ -48,7 +47,6 @@ int main() {
       .output_width = dataset.classes,
       .learning_rate = learning_rate,
       .weight_decay = weight_decay,
-      .noise = noise,
   });
 
   DataLoader dataloader = dataloader_init((DataLoaderDesc){

@@ -7,18 +7,13 @@ typedef struct {
   int output_width;
   float learning_rate;
   float weight_decay;
-  float noise;
 } ModelDesc;
 
 typedef struct Model {
-  float *w, *b;
+  float *params;
   float *grads;
-
   TensorViewF32 wv, bv, gradsv;
-  int input_width;
-  int output_width;
-  float learning_rate;
-  float weight_decay;
+  ModelDesc desc;
 } Model;
 
 Model model_init(ModelDesc desc);
