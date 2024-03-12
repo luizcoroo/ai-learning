@@ -11,8 +11,8 @@ Dataset dataset_init(DatasetDesc desc) {
   int image_size = reader.n_rows * reader.n_cols;
 
   Dataset d = {
-      .x = malloc(sizeof(ubyte) * reader.number_of_images * image_size),
-      .y = malloc(sizeof(ubyte) * reader.number_of_images),
+      .x = malloc(sizeof(uint_t) * reader.number_of_images * image_size),
+      .y = malloc(sizeof(uint_t) * reader.number_of_images),
       .size = reader.number_of_images,
       .width = image_size,
       .classes = 10,
@@ -30,7 +30,7 @@ void dataset_deinit(const Dataset *d) {
   free(d->y);
 }
 
-void dataset_get_item(const Dataset *d, int i, ubyte *x_out, ubyte *y_out) {
-  memcpy(x_out, d->x + i * d->width, sizeof(ubyte) * d->width);
+void dataset_get_item(const Dataset *d, int i, uint_t *x_out, uint_t *y_out) {
+  memcpy(x_out, d->x + i * d->width, sizeof(uint_t) * d->width);
   *y_out = d->y[i];
 }

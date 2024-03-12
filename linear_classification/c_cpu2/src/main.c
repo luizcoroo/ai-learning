@@ -3,33 +3,11 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "tensor.h"
 #include "dataloader.h"
 #include "dataset.h"
 #include "model.h"
 #include "util.h"
-
-// int main() {
-//   float data[16];
-//   for (int i = 0; i < 16; i++)
-//     data[i] = i;
-//
-//   TensorView view = tensor_view(data, (int[]){2, 2, 4}, 3);
-//   tensor_describe(view);
-//   printf("\n");
-//
-//   float data2[12];
-//   for (int i = 0; i < 12; i++)
-//     data2[i] = i;
-//
-//   TensorView view2 = tensor_view(data2, (int[]){4, 3}, 2);
-//   tensor_describe(view2);
-//   printf("\n");
-//
-//   float data3[1000];
-//   TensorView view3 = tensor_matmul(data3, view, view2);
-//   tensor_describe(view3);
-//   printf("\n");
-// }
 
 int main() {
   srand(1);
@@ -54,20 +32,23 @@ int main() {
       .batch_size = batch_size,
   });
 
+  float_t *out_data =
+      malloc(2 * sizeof(float_t) * batch_size * dataset.classes);
+
   clock_t t0 = clock();
 
-  float loss = -1;
+  float_t loss = -1;
   for (int e = 0; e < max_epochs; e++) {
     DataLoaderIterator it = dataloader_iterator(&dataloader);
 
     loss = 0;
     while (dataloader_iterator_next(&it)) {
-      model_forward(&model, it.x, it.y_hat, it.size);
-      loss += model_evaluate(&model, it.y_hat, it.y, it.size);
-      model_backward(&model, it.x, it.y_hat, it.y, it.size);
+      FTensor y_hat = model_forward(&model, it.x, out_data, batch_size);
+      loss += model_evaluate(&model, it.y, y_hat, batch_size);
+      model_backward(&model, it.x, it.y, y_hat, batch_size);
       model_update(&model);
     }
-    loss /= dataloader.n_batches;
+    loss /= dataset.size / (float_t)batch_size;
   }
 
   double time_taken = ((double)clock() - t0) / CLOCKS_PER_SEC;

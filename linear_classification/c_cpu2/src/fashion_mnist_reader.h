@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-typedef unsigned char ubyte;
+#include "config.h"
 
 typedef struct {
   FILE *images_fp;
@@ -13,5 +13,5 @@ typedef struct {
 FashionMnistReader fashionmnist_reader_init(const char *root_dir);
 void fashionmnist_reader_deinit(FashionMnistReader *reader);
 
-void fashionmnist_read_images_to(FashionMnistReader *reader, ubyte *out);
-void fashionmnist_read_labels_to(FashionMnistReader *reader, ubyte *out);
+void fashionmnist_read_images_to(FashionMnistReader *reader, uint_t *out);
+void fashionmnist_read_labels_to(FashionMnistReader *reader, uint_t *out);

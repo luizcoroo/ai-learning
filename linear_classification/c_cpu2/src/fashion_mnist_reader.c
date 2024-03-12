@@ -42,14 +42,24 @@ void fashionmnist_reader_deinit(FashionMnistReader *reader) {
   fclose(reader->labels_fp);
 }
 
-void fashionmnist_read_images_to(FashionMnistReader *reader, ubyte *out) {
+void fashionmnist_read_images_to(FashionMnistReader *reader, uint_t *out) {
+  unsigned char byte;
+
   int bytes = reader->number_of_images * reader->n_rows * reader->n_cols;
-  fread(out, sizeof(ubyte), bytes, reader->images_fp);
+  for (int i = 0; i < bytes; i++) {
+    fread(&byte, sizeof(unsigned char), 1, reader->images_fp);
+    out[i] = byte;
+  }
 }
 
-void fashionmnist_read_labels_to(FashionMnistReader *reader, ubyte *out) {
+void fashionmnist_read_labels_to(FashionMnistReader *reader, uint_t *out) {
+  unsigned char byte;
+
   int bytes = reader->number_of_images;
-  fread(out, sizeof(ubyte), bytes, reader->labels_fp);
+  for (int i = 0; i < bytes; i++) {
+    fread(&byte, sizeof(unsigned char), 1, reader->labels_fp);
+    out[i] = byte;
+  }
 }
 
 void write_filename_to(const char *base_dir, const char *filename, char *out) {
@@ -66,7 +76,7 @@ void write_filename_to(const char *base_dir, const char *filename, char *out) {
 }
 
 int reverse_int(int i) {
-  ubyte b1, b2, b3, b4;
+  unsigned char b1, b2, b3, b4;
 
   b1 = i & 255;
   b2 = (i >> 8) & 255;

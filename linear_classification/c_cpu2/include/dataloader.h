@@ -1,5 +1,6 @@
+#include "tensor.h"
+
 typedef struct Dataset Dataset;
-typedef unsigned char ubyte;
 
 typedef struct {
   const Dataset *dataset;
@@ -7,19 +8,14 @@ typedef struct {
 } DataLoaderDesc;
 
 typedef struct {
-  ubyte *data;
-  float *y_hat;
+  uint_t *data;
   int *permutation;
-  int batch_size;
-  int n_batches;
-  const Dataset *dataset;
+  DataLoaderDesc desc;
 } DataLoader;
 
 typedef struct {
-  ubyte *x;
-  ubyte *y;
-  float *y_hat;
-  int size;
+  UTensor x;
+  UTensor y;
   int i;
   const DataLoader *ref;
 } DataLoaderIterator;

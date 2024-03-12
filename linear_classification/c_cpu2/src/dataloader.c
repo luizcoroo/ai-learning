@@ -5,16 +5,11 @@
 #include "util.h"
 
 DataLoader dataloader_init(DataLoaderDesc desc) {
-  int number_of_ubytes = desc.batch_size * (desc.dataset->width + 1);
-  int number_of_floats = desc.batch_size * desc.dataset->classes;
-
+  int data_len = desc.batch_size * (desc.dataset->width + 1);
   DataLoader dl = {
-      .data = malloc(sizeof(ubyte) * number_of_ubytes),
-      .y_hat = malloc(sizeof(float) * number_of_floats),
+      .data = malloc(sizeof(uint_t) * data_len),
       .permutation = malloc(sizeof(int) * desc.dataset->size),
-      .batch_size = desc.batch_size,
-      .n_batches = desc.dataset->size / desc.batch_size,
-      .dataset = desc.dataset,
+      .desc = desc,
   };
 
   for (int i = 0; i < desc.dataset->size; i++)
@@ -25,35 +20,37 @@ DataLoader dataloader_init(DataLoaderDesc desc) {
 
 void dataloader_deinit(const DataLoader *dl) {
   free(dl->data);
-  free(dl->y_hat);
   free(dl->permutation);
 }
 
 DataLoaderIterator dataloader_iterator(DataLoader *dl) {
-  int x_end = dl->batch_size * dl->dataset->width;
-  shuffleiarr(dl->permutation, dl->dataset->size);
-
-  return (DataLoaderIterator){
-      .x = dl->data + 0,
-      .y = dl->data + x_end,
-      .y_hat = dl->y_hat,
-      .size = dl->batch_size,
-      .i = 0,
-      .ref = dl,
-  };
+  shuffleiarr(dl->permutation, dl->desc.dataset->size);
+  return (DataLoaderIterator){.i = 0, .ref = dl};
 }
 
 int dataloader_iterator_next(DataLoaderIterator *it) {
-  if (it->i >= it->ref->n_batches)
+  const DataLoader *dl = it->ref;
+  DataLoaderDesc desc = dl->desc;
+  const Dataset *dataset = desc.dataset;
+
+  if (it->i >= dataset->size / desc.batch_size)
     return 0;
 
-  int batch_start = it->i * it->size;
-  int width = it->ref->dataset->width;
-  for (int i = 0; i < it->size; i++) {
+  int x_end = desc.batch_size * dataset->width;
+  uint_t *x = dl->data + 0;
+  uint_t *y = dl->data + x_end;
+
+  int batch_start = it->i * desc.batch_size;
+  int width = dataset->width;
+  for (int i = 0; i < desc.batch_size; i++) {
     int idx = it->ref->permutation[batch_start + i];
-    dataset_get_item(it->ref->dataset, idx, it->x + i * width, it->y + i);
+    dataset_get_item(dataset, idx, x + i * width, y + i);
   }
 
+  int classes = dataset->classes;
+  it->x = utensor_init(x, (int[]){desc.batch_size, width}, 2);
+  it->y = utensor_init(y, (int[]){desc.batch_size, classes}, 2);
   it->i += 1;
+
   return 1;
 }

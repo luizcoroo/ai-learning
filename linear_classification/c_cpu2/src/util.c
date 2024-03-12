@@ -1,7 +1,8 @@
-#include "util.h"
 
 #include <math.h>
 #include <stdlib.h>
+
+#include "util.h"
 
 float randnf() {
   float u = ((double)rand() / (RAND_MAX)) * 2 - 1;
@@ -13,16 +14,11 @@ float randnf() {
   return u * c;
 }
 
-void randnfarr(float *arr, int n) {
-  for (int i = 0; i < n; i++)
-    arr[i] = randnf();
-}
-
 void shuffleiarr(int *arr, int n) {
   for (int i = 0; i < n - 1; i++) {
     size_t k = i + rand() / (RAND_MAX / (n - i) + 1);
 
-    float tmp = arr[k];
+    int tmp = arr[k];
     arr[k] = arr[i];
     arr[i] = tmp;
   }

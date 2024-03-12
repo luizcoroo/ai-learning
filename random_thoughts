@@ -1,0 +1,2 @@
+- prevent combinatorial explosion due to xy problem
+- fuse n consecutive operations when the first n-1 operations are inplace
