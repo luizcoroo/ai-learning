@@ -47,9 +47,8 @@ int dataloader_iterator_next(DataLoaderIterator *it) {
     dataset_get_item(dataset, idx, x + i * width, y + i);
   }
 
-  int classes = dataset->classes;
   it->x = utensor_init(x, (int[]){desc.batch_size, width}, 2);
-  it->y = utensor_init(y, (int[]){desc.batch_size, classes}, 2);
+  it->y = utensor_init(y, (int[]){desc.batch_size, 1}, 2);
   it->i += 1;
 
   return 1;

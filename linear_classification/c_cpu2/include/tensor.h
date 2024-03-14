@@ -26,27 +26,24 @@ typedef struct {
 FTensor ftensor_init(float_t *data, const int *sizes, int rank);
 UTensor utensor_init(uint_t *data, const int *sizes, int rank);
 
-void ftensor_log(FTensor a);
-void ftensor_neg(FTensor a);
-void ftensor_add(FTensor a, FTensor b);
-void ftensor_subexp(FTensor a, FTensor b);
-void ftensor_mul(FTensor a, FTensor b);
-void ftensor_div(FTensor a, FTensor b);
-void ftensor_describe(FTensor a);
+UTensor utensor_transpose(UTensor a, int i, int j);
 
-FTensor ftensor_sum(float_t *a_data, FTensor b, const int *dims, int n);
+FTensor ftensor_umatmuladd(float_t *a_data, UTensor b, FTensor c, FTensor d);
+FTensor ftensor_logsoftmax(FTensor a, float_t *tmp_data);
+
 FTensor ftensor_max(float_t *a_data, FTensor b, const int *dims, int n);
-FTensor ftensor_min(float_t *a_data, FTensor b, const int *dims, int n);
-void ftensor_assign(FTensor a, float_t x);
+FTensor ftensor_logsumexp(float_t *a_data, FTensor b, const int *dims, int n);
+FTensor ftensor_sum(float_t *a_data, FTensor b, const int *dims, int n);
 
-FTensor ftensor_onehotenc(float_t *a_data, UTensor b);
-float_t ftensor_crossentropysum(UTensor a, FTensor b);
+float_t ftensor_crossentropysum(FTensor b, UTensor a);
 
-FTensor ftensor_matmul(float_t *a_data, FTensor b, FTensor c);
-FTensor utensor_matmul(float_t *a_data, UTensor b, FTensor c);
-FTensor utensor_matmuladd(float_t *a_data, UTensor b, FTensor c, FTensor d);
+void ftensor_exp(FTensor a);
+void ftensor_onehotdiff(FTensor a, UTensor b);
 
-FTensor ftensor_softmax(FTensor a, float_t *tmp_data);
+void ftensor_sub(FTensor a, FTensor b);
+
+void ftensor_describe(FTensor a);
+void utensor_describe(UTensor a);
 
 void tensor_align_to(DataDesc *d, int rank);
 void tensor_unalign(DataDesc *a);

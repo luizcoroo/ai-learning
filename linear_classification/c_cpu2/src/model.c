@@ -35,29 +35,28 @@ void model_deinit(const Model *m) { free(m->data); }
 
 FTensor model_forward(Model *m, UTensor x, float_t *out_data, int n) {
   float_t *tmp = m->data + (m->desc.output_width * (m->desc.input_width + 1));
-  return ftensor_softmax(utensor_matmuladd(out_data, x, m->w, m->b), tmp);
+  return ftensor_logsoftmax(ftensor_umatmuladd(out_data, x, m->w, m->b), tmp);
 }
 
 float_t model_evaluate(const Model *m, UTensor y, FTensor y_hat, int n) {
-  return -ftensor_crossentropysum(y, y_hat) / n;
+  return -ftensor_crossentropysum(y_hat, y) / n;
 }
 
 void model_backward(Model *m, UTensor x, UTensor y, FTensor y_hat, int n) {
-  float_t tmp = n;
-  FTensor len = ftensor_init(&size_data, (int[]){1}, 1);
+  int xr = x.desc.rank;
+  UTensor xt = utensor_transpose(x, xr - 2, xr - 1);
 
-  ftensor_oneshotdiff(y_hat, y);
+  float_t dummy_data = 0;
+  FTensor dummy_b = ftensor_init(&dummy_data, (int[]){1}, 1);
 
-  ftensor_assign(m->g_w, 0);
-  ftensor_addmatmul(m->g_w, ftensor_transpose(x), y_hat);
-  ftensor_div(m->g_w, len);
+  ftensor_exp(y_hat);
+  ftensor_onehotdiff(y_hat, y);
 
-  ftensor_assign(m->g_b, 0);
-  ftensor_add(m->g_b, y_hat);
-  ftensor_div(m->g_b, len);
+  ftensor_umatmuladd(m->g_w.data, xt, y_hat, dummy_b);
+  ftensor_sum(m->g_b.data, y_hat, (int[]){0}, 1);
 }
 
-void model_update(Model *m) {
+void model_update(Model *m, int n) {
   int w_len = m->desc.input_width * m->desc.output_width;
   int b_len = m->desc.output_width;
 
@@ -68,9 +67,9 @@ void model_update(Model *m) {
 
   int j = 0;
   for (; j < w_len; j++)
-    params_data[j] =
-        regularization * params_data[j] - m->desc.learning_rate * grads_data[j];
+    params_data[j] = regularization * params_data[j] -
+                     m->desc.learning_rate * grads_data[j] / n;
 
   for (; j < w_len + b_len; j++)
-    params_data[j] -= m->desc.learning_rate * grads_data[j];
+    params_data[j] -= m->desc.learning_rate * grads_data[j] / n;
 }

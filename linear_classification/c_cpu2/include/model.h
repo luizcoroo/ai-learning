@@ -20,4 +20,4 @@ void model_deinit(const Model *model);
 FTensor model_forward(Model *m, UTensor x, float_t *out_data, int n);
 float model_evaluate(const Model *model, UTensor y, FTensor y_hat, int n);
 void model_backward(Model *m, UTensor x, UTensor y, FTensor y_hat, int n);
-void model_update(Model *model);
+void model_update(Model *model, int n);
