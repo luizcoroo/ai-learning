@@ -28,3 +28,6 @@ void model_backward(Model *m, const float *x, const float *y_hat,
                     const float *y, int n);
 
 void model_update(Model *model);
+
+
+void model_to_cpu(Model *model);

@@ -54,3 +54,11 @@ void model_update(Model *m) {
   model_cuda_update(m->grads, m->w, m->b, m->width, m->learning_rate,
                     m->weight_decay);
 }
+
+void model_to_cpu(Model *m) {
+  int bytes = sizeof(float) * 2 * (m->width + 1);
+  cudaMemcpy(m->cpu_data, m->gpu_data, bytes, cudaMemcpyDeviceToHost);
+
+  m->w = m->cpu_data;
+  m->b = m->w + m->width;
+}
